@@ -1,4 +1,7 @@
+#include <lualib.h>
+#include <lauxlib.h>
 #include <iot/mongoose.h>
+#include <iot/cJSON.h>
 #include "provision.h"
 
 static int s_signo = 0;
@@ -84,7 +87,7 @@ static void http_ev_connect_cb(struct mg_connection *c, int ev, void *ev_data, v
         "Content-Type: octet-stream\r\n"
         "Content-Length: %d\r\n"
         "\r\n",
-        mg_url_uri(s_url), (int)host.len,
+        mg_url_uri(priv->cfg.opts->provision_address), (int)host.len,
         host.ptr, content_length);
 
     mg_send(c, post_data, content_length);
@@ -93,7 +96,7 @@ static void http_ev_connect_cb(struct mg_connection *c, int ev, void *ev_data, v
 
 static void http_ev_http_msg_cb(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
     struct mg_http_message *hm = (struct mg_http_message *)ev_data;
-    const char  message = mg_mprintf("%.*s", (int)hm->message.len, hm->message.ptr);
+    const char *message = mg_mprintf("%.*s", (int)hm->message.len, hm->message.ptr);
     http_message_callback(c->mgr, message); //handle response
     free((void *)message);
     c->is_draining = 1;
@@ -110,7 +113,7 @@ static void http_ev_close_cb(struct mg_connection *c, int ev, void *ev_data, voi
     }
 }
 
-static void http_cb(struct mg_connection *c, int ev, void *ev_data, void *fn_data, void *fn_data) {
+static void http_cb(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
     switch (ev) {
         case MG_EV_OPEN:
             http_ev_open_cb(c, ev, ev_data, fn_data);
@@ -127,7 +130,7 @@ static void http_cb(struct mg_connection *c, int ev, void *ev_data, void *fn_dat
         case MG_EV_ERROR:
             http_ev_error_cb(c, ev, ev_data, fn_data);
             break;
-        cast MG_EV_CLOSE:
+        case MG_EV_CLOSE:
             http_ev_close_cb(c, ev, ev_data, fn_data);
             break;
     }
