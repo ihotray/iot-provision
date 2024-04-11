@@ -76,22 +76,29 @@ static void http_ev_connect_cb(struct mg_connection *c, int ev, void *ev_data, v
         mg_tls_init(c, &opts);
     }
 
-    // send request
-    const char *post_data = mg_mprintf("{\"sn\": \"%s\", \"key\": \"%s\", \"secret\": \"%s\"}", \
-        priv->cfg.opts->sn, priv->cfg.opts->product_key, priv->cfg.opts->product_secret);
+    //sign
+    const char *sign_raw = mg_mprintf("%s%s%s%s", priv->cfg.opts->sn, priv->cfg.opts->product_key, priv->cfg.opts->product_secret, priv->cfg.opts->salt);
+    mg_sha1_ctx ctx = {0};
+    mg_sha1_init(&ctx);
+    unsigned char digest[20];
+    mg_sha1_update(&ctx, (unsigned char *)sign_raw, strlen(sign_raw));
+    mg_sha1_final(digest, &ctx);
+    free((void*)sign_raw);
 
-    int content_length = strlen(post_data);
+    // send request
+    const char *url = mg_mprintf("%s?method=register&sn=%s&key=%s&secret=%s&sign=%02x", priv->cfg.opts->provision_address \
+        priv->cfg.opts->sn, priv->cfg.opts->product_key, priv->cfg.opts->product_secret, digest);
+
     mg_printf(c,
-        "POST %s HTTP/1.0\r\n"
+        "GET %s HTTP/1.0\r\n"
         "Host: %.*s\r\n"
         "Content-Type: octet-stream\r\n"
         "Content-Length: %d\r\n"
         "\r\n",
-        mg_url_uri(priv->cfg.opts->provision_address), (int)host.len,
-        host.ptr, content_length);
+        mg_url_uri(url), (int)host.len,
+        host.ptr, 0);
 
-    mg_send(c, post_data, content_length);
-    free((void*)post_data);
+    free((void*)url);
 }
 
 static void http_ev_http_msg_cb(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {

@@ -7,6 +7,7 @@
 #define HANDLER_LUA_SCRIPT "/www/iot/handler/iot-provision.lua"
 #define DNS4_TIMEOUT 6
 #define HTTP_TIMEOUT 30
+#define SALT "cb2ba14fa0e14ca9dc14c86b8973d98a"
 
 
 static void usage(const char *prog) {
@@ -19,10 +20,11 @@ static void usage(const char *prog) {
             "  -p PASS   - product secret, default: null\n"
             "  -d ADDR   - dns server address, default: '%s'\n"
             "  -x PATH   - provision message callback script, default: '%s'\n"
+            "  -S SALT   - sign salt, default: '%s'\n"
             "  -t n      - dns server timeout, default: %d\n"
             "  -T n      - http client timeout, default: %d\n"
             "  -v LEVEL  - debug level, from 0 to 4, default: %d\n",
-            MG_VERSION, prog, PROVISION_ADDRESS, DEFAULT_DNS4_URL, HANDLER_LUA_SCRIPT, DNS4_TIMEOUT, HTTP_TIMEOUT, MG_LL_INFO);
+            MG_VERSION, prog, PROVISION_ADDRESS, DEFAULT_DNS4_URL, HANDLER_LUA_SCRIPT, SALT, DNS4_TIMEOUT, HTTP_TIMEOUT, MG_LL_INFO);
 
     exit(EXIT_FAILURE);
 }
@@ -36,6 +38,7 @@ int main(int argc, char *argv[]) {
         .product_secret = NULL,
         .dns4_url = DEFAULT_DNS4_URL,
         .callback_lua = HANDLER_LUA_SCRIPT,
+        .salt = SALT,
         .dns4_timeout = DNS4_TIMEOUT,
         .http_timeout = HTTP_TIMEOUT,
         .debug_level = MG_LL_INFO
@@ -45,6 +48,8 @@ int main(int argc, char *argv[]) {
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-s") == 0) {
             opts.provision_address = argv[++i];
+        } if (strcmp(argv[i], "-S") == 0) {
+            opts.salt = argv[++i];
         } else if (strcmp(argv[i], "-n") == 0) {
             opts.sn = argv[++i];
         } else if (strcmp(argv[i], "-u") == 0) {

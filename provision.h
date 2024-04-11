@@ -16,6 +16,7 @@ struct provision_option {
     const char *provision_address;
     const char *dns4_url;
     const char *callback_lua;
+    const char *salt;
     int dns4_timeout;
     int http_timeout;        //http connection timeout
     int debug_level;
