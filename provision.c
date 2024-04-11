@@ -12,7 +12,7 @@ static void signal_handler(int signo) {
 void http_message_callback(struct mg_mgr *mgr, const char *message) {
     struct provision_private *priv = (struct provision_private *)mgr->userdata;
     const char *ret = NULL;
-    cJSON *root = NULL;
+    cJSON *root = NULL, *code = NULL;
 
     lua_State *L = luaL_newstate();
 
@@ -46,7 +46,7 @@ void http_message_callback(struct mg_mgr *mgr, const char *message) {
 
     root = cJSON_Parse(ret);
     code = cJSON_GetObjectItem(root, "code");
-    if ( cJSON_IsNumber(code) && int(cJSON_GetNumberValue(code)) == 0) {
+    if ( cJSON_IsNumber(code) && (int)cJSON_GetNumberValue(code) == 0) {
         priv->state = DONE;
     }
 
@@ -96,7 +96,7 @@ static void http_ev_connect_cb(struct mg_connection *c, int ev, void *ev_data, v
 
 static void http_ev_http_msg_cb(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
     struct mg_http_message *hm = (struct mg_http_message *)ev_data;
-    const char *message = mg_mprintf("%.*s", (int)hm->message.len, hm->message.ptr);
+    const char *message = mg_mprintf("%.*s", (int)hm->body.len, hm->body.ptr);
     http_message_callback(c->mgr, message); //handle response
     free((void *)message);
     c->is_draining = 1;
@@ -176,6 +176,8 @@ int provision_init(void **priv, void *opts) {
     mg_mgr_init(&p->mgr);
     p->mgr.dnstimeout = p->cfg.opts->dns4_timeout * 1000;
     p->mgr.dns4.url = p->cfg.opts->dns4_url;
+
+    p->mgr.userdata = p;
 
     mg_timer_add(&p->mgr, 1000, timer_opts, timer_provision_fn, &p->mgr);
 
