@@ -80,14 +80,17 @@ static void http_ev_connect_cb(struct mg_connection *c, int ev, void *ev_data, v
     const char *sign_raw = mg_mprintf("%s%s%s%s", priv->cfg.opts->sn, priv->cfg.opts->product_key, priv->cfg.opts->product_secret, priv->cfg.opts->salt);
     mg_sha1_ctx ctx = {0};
     mg_sha1_init(&ctx);
-    unsigned char digest[20];
+    unsigned char digest[20] = {0};
     mg_sha1_update(&ctx, (unsigned char *)sign_raw, strlen(sign_raw));
     mg_sha1_final(digest, &ctx);
     free((void*)sign_raw);
 
+    char sign[sizeof(digest) + 1] = {0};
+    mg_hex(digest, sizeof(digest), sign);
+
     // send request
-    const char *uri = mg_mprintf("%s?method=register&sn=%s&key=%s&secret=%s&sign=%02x", mg_url_uri(priv->cfg.opts->provision_address), \
-        priv->cfg.opts->sn, priv->cfg.opts->product_key, priv->cfg.opts->product_secret, digest);
+    const char *uri = mg_mprintf("%s?method=register&sn=%s&key=%s&secret=%s&sign=%s", mg_url_uri(priv->cfg.opts->provision_address), \
+        priv->cfg.opts->sn, priv->cfg.opts->product_key, priv->cfg.opts->product_secret, sign);
 
     MG_INFO(("http request host: %.*s, uri: %s", (int)host.len, host.ptr, uri));
 
