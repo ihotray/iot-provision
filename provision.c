@@ -86,10 +86,10 @@ static void http_ev_connect_cb(struct mg_connection *c, int ev, void *ev_data, v
     free((void*)sign_raw);
 
     // send request
-    const char *url = mg_mprintf("%s?method=register&sn=%s&key=%s&secret=%s&sign=%02x", priv->cfg.opts->provision_address, \
+    const char *uri = mg_mprintf("%s?method=register&sn=%s&key=%s&secret=%s&sign=%02x", mg_url_uri(priv->cfg.opts->provision_address), \
         priv->cfg.opts->sn, priv->cfg.opts->product_key, priv->cfg.opts->product_secret, digest);
 
-    MG_INFO(("http request: %s, uri: %s", url, mg_url_uri(url)));
+    MG_INFO(("http request host: %.*s, uri: %s", (int)host.len, host.ptr, uri));
 
     mg_printf(c,
         "GET %s HTTP/1.0\r\n"
@@ -97,10 +97,10 @@ static void http_ev_connect_cb(struct mg_connection *c, int ev, void *ev_data, v
         "Content-Type: octet-stream\r\n"
         "Content-Length: %d\r\n"
         "\r\n",
-        mg_url_uri(url), (int)host.len,
+        uri, (int)host.len,
         host.ptr, 0);
 
-    free((void*)url);
+    free((void*)uri);
 }
 
 static void http_ev_http_msg_cb(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
