@@ -67,6 +67,7 @@ int main(int argc, char *argv[]) {
         } else if (strcmp(argv[i], "-v") == 0) {
             opts.debug_level = atoi(argv[++i]);
         } else {
+            MG_ERROR(("unknown option: %s", argv[i]));
             usage(argv[0]);
         }
     }

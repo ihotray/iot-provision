@@ -89,6 +89,8 @@ static void http_ev_connect_cb(struct mg_connection *c, int ev, void *ev_data, v
     const char *url = mg_mprintf("%s?method=register&sn=%s&key=%s&secret=%s&sign=%02x", priv->cfg.opts->provision_address, \
         priv->cfg.opts->sn, priv->cfg.opts->product_key, priv->cfg.opts->product_secret, digest);
 
+    MG_INFO(("http request: %s, uri: %s", url, mg_url_uri(url)));
+
     mg_printf(c,
         "GET %s HTTP/1.0\r\n"
         "Host: %.*s\r\n"
