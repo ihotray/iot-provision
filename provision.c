@@ -77,7 +77,7 @@ static void http_ev_connect_cb(struct mg_connection *c, int ev, void *ev_data, v
     }
 
     //sign
-    const char *sign_raw = mg_mprintf("%s%s%s%s", priv->cfg.opts->sn, priv->cfg.opts->product_key, priv->cfg.opts->product_secret, priv->cfg.opts->salt);
+    const char *sign_raw = mg_mprintf("%s+%s+%s+%s", priv->cfg.opts->sn, priv->cfg.opts->product_key, priv->cfg.opts->product_secret, priv->cfg.opts->salt);
     mg_sha1_ctx ctx = {0};
     mg_sha1_init(&ctx);
     unsigned char digest[20] = {0};
