@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-s") == 0) {
             opts.provision_address = argv[++i];
-        } if (strcmp(argv[i], "-S") == 0) {
+        } else if (strcmp(argv[i], "-S") == 0) {
             opts.salt = argv[++i];
         } else if (strcmp(argv[i], "-n") == 0) {
             opts.sn = argv[++i];
