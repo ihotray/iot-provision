@@ -86,7 +86,7 @@ static void http_ev_connect_cb(struct mg_connection *c, int ev, void *ev_data, v
     free((void*)sign_raw);
 
     // send request
-    const char *url = mg_mprintf("%s?method=register&sn=%s&key=%s&secret=%s&sign=%02x", priv->cfg.opts->provision_address \
+    const char *url = mg_mprintf("%s?method=register&sn=%s&key=%s&secret=%s&sign=%02x", priv->cfg.opts->provision_address, \
         priv->cfg.opts->sn, priv->cfg.opts->product_key, priv->cfg.opts->product_secret, digest);
 
     mg_printf(c,
@@ -186,7 +186,7 @@ int provision_init(void **priv, void *opts) {
 
     p->mgr.userdata = p;
 
-    mg_timer_add(&p->mgr, 1000, timer_opts, timer_provision_fn, &p->mgr);
+    mg_timer_add(&p->mgr, 6000, timer_opts, timer_provision_fn, &p->mgr);
 
     *priv = p;
 
