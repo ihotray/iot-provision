@@ -11,6 +11,7 @@ enum provision_state {
 
 struct provision_option {
     const char *sn;
+    const char *ca;
     const char *product_key;
     const char *product_secret;
     const char *provision_address;

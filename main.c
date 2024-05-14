@@ -9,12 +9,12 @@
 #define HTTP_TIMEOUT 30
 #define SALT "cb2ba14fa0e14ca9dc14c86b8973d98a"
 
-
 static void usage(const char *prog) {
     fprintf(stderr,
             "IoT-SDK v.%s\n"
             "Usage: %s OPTIONS\n"
             "  -s ADDR   - provision server address, default: '%s'\n"
+            "  -C CA     - ca certificate file, default: null\n"
             "  -n SN     - device sn, default: null\n"
             "  -u USER   - product key, default: null\n"
             "  -p PASS   - product secret, default: null\n"
@@ -34,6 +34,7 @@ int main(int argc, char *argv[]) {
     struct provision_option opts = {
         .provision_address = PROVISION_ADDRESS,
         .sn = NULL,
+        .ca = NULL,
         .product_key = NULL,
         .product_secret = NULL,
         .dns4_url = DEFAULT_DNS4_URL,
@@ -52,6 +53,8 @@ int main(int argc, char *argv[]) {
             opts.salt = argv[++i];
         } else if (strcmp(argv[i], "-n") == 0) {
             opts.sn = argv[++i];
+        } else if (strcmp(argv[i], "-C") == 0) {
+            opts.ca = argv[++i];
         } else if (strcmp(argv[i], "-u") == 0) {
             opts.product_key = argv[++i];
         } else if (strcmp(argv[i], "-p") == 0) {

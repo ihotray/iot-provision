@@ -73,6 +73,9 @@ static void http_ev_connect_cb(struct mg_connection *c, int ev, void *ev_data, v
 
     if (mg_url_is_ssl(priv->cfg.opts->provision_address)) {
         struct mg_tls_opts opts = { 0 };
+        if (priv->cfg.opts->ca) {
+            opts.ca = priv->cfg.opts->ca;
+        }
         mg_tls_init(c, &opts);
     }
 
