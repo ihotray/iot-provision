@@ -58,15 +58,15 @@ done:
 
 }
 
-static void http_ev_open_cb(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
+static void http_ev_open_cb(struct mg_connection *c, int ev, void *ev_data) {
 
 }
 
-static void http_ev_poll_cb(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
+static void http_ev_poll_cb(struct mg_connection *c, int ev, void *ev_data) {
 
 }
 
-static void http_ev_connect_cb(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
+static void http_ev_connect_cb(struct mg_connection *c, int ev, void *ev_data) {
     struct provision_private *priv = (struct provision_private*)c->mgr->userdata;
     // connected to server. Extract host name from URL
     struct mg_str host = mg_url_host(priv->cfg.opts->provision_address);
@@ -74,7 +74,7 @@ static void http_ev_connect_cb(struct mg_connection *c, int ev, void *ev_data, v
     if (mg_url_is_ssl(priv->cfg.opts->provision_address)) {
         struct mg_tls_opts opts = { 0 };
         if (priv->cfg.opts->ca) {
-            opts.ca = priv->cfg.opts->ca;
+            opts.ca = mg_str(priv->cfg.opts->ca);
         }
         mg_tls_init(c, &opts);
     }
@@ -88,14 +88,14 @@ static void http_ev_connect_cb(struct mg_connection *c, int ev, void *ev_data, v
     mg_sha1_final(digest, &ctx);
     free((void*)sign_raw);
 
-    char sign[sizeof(digest) + 1] = {0};
-    mg_hex(digest, sizeof(digest), sign);
+    char sign[sizeof(digest) * 2 + 1] = {0};
+    mg_snprintf(sign, sizeof(sign), "%M", mg_print_hex, sizeof(digest), digest);
 
     // send request
     const char *uri = mg_mprintf("%s?method=register&sn=%s&key=%s&secret=%s&sign=%s", mg_url_uri(priv->cfg.opts->provision_address), \
         priv->cfg.opts->sn, priv->cfg.opts->product_key, priv->cfg.opts->product_secret, sign);
 
-    MG_INFO(("http request host: %.*s, uri: %s", (int)host.len, host.ptr, uri));
+    MG_INFO(("http request host: %.*s, uri: %s", (int)host.len, host.buf, uri));
 
     mg_printf(c,
         "GET %s HTTP/1.0\r\n"
@@ -104,49 +104,49 @@ static void http_ev_connect_cb(struct mg_connection *c, int ev, void *ev_data, v
         "Content-Length: %d\r\n"
         "\r\n",
         uri, (int)host.len,
-        host.ptr, 0);
+        host.buf, 0);
 
     free((void*)uri);
 }
 
-static void http_ev_http_msg_cb(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
+static void http_ev_http_msg_cb(struct mg_connection *c, int ev, void *ev_data) {
     struct mg_http_message *hm = (struct mg_http_message *)ev_data;
-    const char *message = mg_mprintf("%.*s", (int)hm->body.len, hm->body.ptr);
+    const char *message = mg_mprintf("%.*s", (int)hm->body.len, hm->body.buf);
     http_message_callback(c->mgr, message); //handle response
     free((void *)message);
     c->is_draining = 1;
 }
 
-static void http_ev_error_cb(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
+static void http_ev_error_cb(struct mg_connection *c, int ev, void *ev_data) {
     c->is_draining = 1;
 }
 
-static void http_ev_close_cb(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
+static void http_ev_close_cb(struct mg_connection *c, int ev, void *ev_data) {
     struct provision_private *priv = (struct provision_private*)c->mgr->userdata;
     if (DONE != priv->state) { //not done, switch to idle, repeat do it
         priv->state = IDLE;
     }
 }
 
-static void http_cb(struct mg_connection *c, int ev, void *ev_data, void *fn_data) {
+static void http_cb(struct mg_connection *c, int ev, void *ev_data) {
     switch (ev) {
         case MG_EV_OPEN:
-            http_ev_open_cb(c, ev, ev_data, fn_data);
+            http_ev_open_cb(c, ev, ev_data);
             break;
         case MG_EV_POLL:
-            http_ev_poll_cb(c, ev, ev_data, fn_data);
+            http_ev_poll_cb(c, ev, ev_data);
             break;
         case MG_EV_CONNECT:
-            http_ev_connect_cb(c, ev, ev_data, fn_data);
+            http_ev_connect_cb(c, ev, ev_data);
             break;
         case MG_EV_HTTP_MSG:
-            http_ev_http_msg_cb(c, ev, ev_data, fn_data);
+            http_ev_http_msg_cb(c, ev, ev_data);
             break;
         case MG_EV_ERROR:
-            http_ev_error_cb(c, ev, ev_data, fn_data);
+            http_ev_error_cb(c, ev, ev_data);
             break;
         case MG_EV_CLOSE:
-            http_ev_close_cb(c, ev, ev_data, fn_data);
+            http_ev_close_cb(c, ev, ev_data);
             break;
     }
 }
@@ -156,6 +156,14 @@ void timer_provision_fn(void *arg) {
     struct mg_mgr *mgr = (struct mg_mgr *)arg;
     struct provision_private *priv = (struct provision_private*)mgr->userdata;
     if (IDLE == priv->state) { //idle
+        if ( mgr->dns4.c ) {
+            mgr->dns4.c->is_closing = 1; //close dns4 connection
+            mgr->dns4.c = NULL; //reset dns4 connection
+        }
+        if ( mgr->dns6.c ) {
+            mgr->dns6.c->is_closing = 1; //close dns6 connection
+            mgr->dns6.c = NULL; //reset dns6 connection
+        }
         priv->conn = mg_http_connect(mgr, priv->cfg.opts->provision_address, http_cb, NULL);  // Create client connection
         if (priv->conn) {
             priv->state = BUSY;
