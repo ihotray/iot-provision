@@ -156,13 +156,13 @@ void timer_provision_fn(void *arg) {
     struct mg_mgr *mgr = (struct mg_mgr *)arg;
     struct provision_private *priv = (struct provision_private*)mgr->userdata;
     if (IDLE == priv->state) { //idle
-        if (mgr->dns4->c) {
-            mgr->dns4->c->is_draining = 1; //close dns connection if exist, and recreate it when next time do dns request
-            mgr->dns4->c = NULL;
+        if (mgr->dns4.c) {
+            mgr->dns4.c->is_draining = 1; //close dns connection if exist, and recreate it when next time do dns request
+            mgr->dns4.c = NULL;
         }
-        if (mgr->dns6->c) {
-            mgr->dns6->c->is_draining = 1; //close dns connection if exist, and recreate it when next time do dns request
-            mgr->dns6->c = NULL;
+        if (mgr->dns6.c) {
+            mgr->dns6.c->is_draining = 1; //close dns connection if exist, and recreate it when next time do dns request
+            mgr->dns6.c = NULL;
         }
         priv->conn = mg_http_connect(mgr, priv->cfg.opts->provision_address, http_cb, NULL);  // Create client connection
         if (priv->conn) {
